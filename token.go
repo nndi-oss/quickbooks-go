@@ -22,10 +22,8 @@ type BearerToken struct {
 	XRefreshTokenExpiresIn int64  `json:"x_refresh_token_expires_in"`
 }
 
-//
 // Method to retrieve access token (bearer token)
 // This method can only be called once
-//
 func (c *Client) RetrieveBearerToken(authorizationCode string, redirectURI string) (*BearerToken, error) {
 	client := &http.Client{}
 	data := url.Values{}
@@ -62,9 +60,7 @@ func (c *Client) RetrieveBearerToken(authorizationCode string, redirectURI strin
 	return bearerTokenResponse, err
 }
 
-//
 // Call the refresh endpoint to generate new tokens
-//
 func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 	client := &http.Client{}
 	data := url.Values{}
@@ -102,9 +98,7 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 	return bearerTokenResponse, err
 }
 
-//
 // Call the revoke endpoint to revoke tokens
-//
 func (c *Client) RevokeToken(refreshToken string) error {
 	client := &http.Client{}
 	data := url.Values{}

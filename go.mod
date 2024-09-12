@@ -1,4 +1,4 @@
-module github.com/neonmoose/quickbooks-go
+module github.com/justworkshr/quickbooks-go
 
 go 1.18
 

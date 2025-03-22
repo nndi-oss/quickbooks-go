@@ -23,36 +23,36 @@ type Invoice struct {
 	PrivateNote string `json:",omitempty"`
 	//LinkedTxn
 	Line         []Line
-	TxnTaxDetail TxnTaxDetail `json:",omitempty"`
-	CustomerRef  ReferenceType
-	CustomerMemo MemoRef         `json:",omitempty"`
-	BillAddr     PhysicalAddress `json:",omitempty"`
-	ShipAddr     PhysicalAddress `json:",omitempty"`
-	ClassRef     ReferenceType   `json:",omitempty"`
-	SalesTermRef ReferenceType   `json:",omitempty"`
-	DueDate      Date            `json:",omitempty"`
+	TxnTaxDetail *TxnTaxDetail `json:",omitempty"`
+	CustomerRef  *ReferenceType
+	CustomerMemo *MemoRef         `json:",omitempty"`
+	BillAddr     *PhysicalAddress `json:",omitempty"`
+	ShipAddr     *PhysicalAddress `json:",omitempty"`
+	ClassRef     *ReferenceType   `json:",omitempty"`
+	SalesTermRef *ReferenceType   `json:",omitempty"`
+	DueDate      *Date            `json:",omitempty"`
 	//GlobalTaxCalculation
-	ShipMethodRef ReferenceType `json:",omitempty"`
-	ShipDate      Date          `json:",omitempty"`
-	TrackingNum   string        `json:",omitempty"`
-	TotalAmt      json.Number   `json:",omitempty"`
+	ShipMethodRef *ReferenceType `json:",omitempty"`
+	ShipDate      *Date          `json:",omitempty"`
+	TrackingNum   string         `json:",omitempty"`
+	TotalAmt      json.Number    `json:",omitempty"`
 	//CurrencyRef
-	ExchangeRate          json.Number  `json:",omitempty"`
-	HomeAmtTotal          json.Number  `json:",omitempty"`
-	HomeBalance           json.Number  `json:",omitempty"`
-	ApplyTaxAfterDiscount bool         `json:",omitempty"`
-	PrintStatus           string       `json:",omitempty"`
-	EmailStatus           string       `json:",omitempty"`
-	BillEmail             EmailAddress `json:",omitempty"`
-	BillEmailCC           EmailAddress `json:"BillEmailCc,omitempty"`
-	BillEmailBCC          EmailAddress `json:"BillEmailBcc,omitempty"`
+	ExchangeRate          json.Number   `json:",omitempty"`
+	HomeAmtTotal          json.Number   `json:",omitempty"`
+	HomeBalance           json.Number   `json:",omitempty"`
+	ApplyTaxAfterDiscount bool          `json:",omitempty"`
+	PrintStatus           string        `json:",omitempty"`
+	EmailStatus           string        `json:",omitempty"`
+	BillEmail             *EmailAddress `json:",omitempty"`
+	BillEmailCC           *EmailAddress `json:"BillEmailCc,omitempty"`
+	BillEmailBCC          *EmailAddress `json:"BillEmailBcc,omitempty"`
 	//DeliveryInfo
-	Balance                      json.Number   `json:",omitempty"`
-	TxnSource                    string        `json:",omitempty"`
-	AllowOnlineCreditCardPayment bool          `json:",omitempty"`
-	AllowOnlineACHPayment        bool          `json:",omitempty"`
-	Deposit                      json.Number   `json:",omitempty"`
-	DepositToAccountRef          ReferenceType `json:",omitempty"`
+	Balance                      json.Number    `json:",omitempty"`
+	TxnSource                    string         `json:",omitempty"`
+	AllowOnlineCreditCardPayment bool           `json:",omitempty"`
+	AllowOnlineACHPayment        bool           `json:",omitempty"`
+	Deposit                      json.Number    `json:",omitempty"`
+	DepositToAccountRef          *ReferenceType `json:",omitempty"`
 }
 
 // TxnTaxDetail ...
@@ -107,11 +107,12 @@ type Line struct {
 	Description                   string `json:",omitempty"`
 	Amount                        json.Number
 	DetailType                    string
-	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail `json:",omitempty"`
-	JournalEntryLineDetail        JournalEntryLineDetail        `json:",omitempty"`
-	SalesItemLineDetail           SalesItemLineDetail           `json:",omitempty"`
-	DiscountLineDetail            DiscountLineDetail            `json:",omitempty"`
-	TaxLineDetail                 TaxLineDetail                 `json:",omitempty"`
+	AccountBasedExpenseLineDetail *AccountBasedExpenseLineDetail `json:",omitempty"`
+	JournalEntryLineDetail        *JournalEntryLineDetail        `json:",omitempty"`
+	SalesItemLineDetail           *SalesItemLineDetail           `json:",omitempty"`
+	SubtotalLineDetail            *SubtotalLineDetail            `json:",omitempty"`
+	DiscountLineDetail            *DiscountLineDetail            `json:",omitempty"`
+	TaxLineDetail                 *TaxLineDetail                 `json:",omitempty"`
 }
 
 // TaxLineDetail ...
@@ -124,19 +125,23 @@ type TaxLineDetail struct {
 	TaxRateRef ReferenceType
 }
 
+type SubtotalLineDetail struct {
+	ItemRef *ReferenceType `json:",omitempty"`
+}
+
 // SalesItemLineDetail ...
 type SalesItemLineDetail struct {
-	ItemRef   ReferenceType `json:",omitempty"`
-	ClassRef  ReferenceType `json:",omitempty"`
-	UnitPrice json.Number   `json:",omitempty"`
+	ItemRef   *ReferenceType `json:",omitempty"`
+	ClassRef  *ReferenceType `json:",omitempty"`
+	UnitPrice json.Number    `json:",omitempty"`
 	//MarkupInfo
-	Qty             float32       `json:",omitempty"`
-	ItemAccountRef  ReferenceType `json:",omitempty"`
-	TaxCodeRef      ReferenceType `json:",omitempty"`
-	ServiceDate     Date          `json:",omitempty"`
-	TaxInclusiveAmt json.Number   `json:",omitempty"`
-	DiscountRate    json.Number   `json:",omitempty"`
-	DiscountAmt     json.Number   `json:",omitempty"`
+	Qty             float32        `json:",omitempty"`
+	ItemAccountRef  *ReferenceType `json:",omitempty"`
+	TaxCodeRef      *ReferenceType `json:",omitempty"`
+	ServiceDate     Date           `json:",omitempty"`
+	TaxInclusiveAmt json.Number    `json:",omitempty"`
+	DiscountRate    json.Number    `json:",omitempty"`
+	DiscountAmt     json.Number    `json:",omitempty"`
 }
 
 // DiscountLineDetail ...
@@ -201,6 +206,77 @@ func (c *Client) fetchInvoicePage(startpos int) ([]Invoice, error) {
 // CreateInvoice creates the given Invoice on the QuickBooks server, returning
 // the resulting Invoice object.
 func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/invoice"
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
+	var j []byte
+	j, err = json.Marshal(inv)
+	if err != nil {
+		return nil, err
+	}
+	var req *http.Request
+	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, parseFailure(res)
+	}
+
+	var r struct {
+		Invoice Invoice
+		Time    Date
+	}
+	err = json.NewDecoder(res.Body).Decode(&r)
+	return &r.Invoice, err
+}
+
+type CustomerRef struct {
+	Name  string `json:"name"`
+	Value string `json:"id"`
+}
+
+type CreateInvoiceSalesItemLineDetail struct {
+	LineNum int         `json:"LineNum"`
+	Amount  json.Number `json:"Amount"`
+
+	Description string `json:"Description"`
+}
+
+type DescriptionLineDetail struct {
+	ServiceDate string `json:"ServiceDate"`
+}
+
+type CreateInvoiceLine struct {
+	DetailType          string                           `json:"DetailType"`
+	SalesItemLineDetail CreateInvoiceSalesItemLineDetail `json:"SalesItemLineDetail,omitempty"`
+	Description         string                           `json:"Description,omitempty"`
+	LineNum             int                              `json:"LineNum"`
+	Amount              json.Number                      `json:"Amount"`
+}
+
+type CreateInvoiceRequest struct {
+	CustomerRef CustomerRef         `json:"CustomerRef"`
+	Line        []CreateInvoiceLine `json:"Line"`
+}
+
+// CreateInvoice creates the given Invoice on the QuickBooks server, returning
+// the resulting Invoice object.
+func (c *Client) CreateInvoice69(inv *CreateInvoiceRequest) (*Invoice, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err

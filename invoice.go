@@ -6,6 +6,7 @@ package quickbooks
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -23,36 +24,36 @@ type Invoice struct {
 	PrivateNote string `json:",omitempty"`
 	//LinkedTxn
 	Line         []Line
-	TxnTaxDetail TxnTaxDetail `json:",omitempty"`
-	CustomerRef  ReferenceType
-	CustomerMemo MemoRef         `json:",omitempty"`
-	BillAddr     PhysicalAddress `json:",omitempty"`
-	ShipAddr     PhysicalAddress `json:",omitempty"`
-	ClassRef     ReferenceType   `json:",omitempty"`
-	SalesTermRef ReferenceType   `json:",omitempty"`
-	DueDate      Date            `json:",omitempty"`
+	TxnTaxDetail *TxnTaxDetail `json:",omitempty"`
+	CustomerRef  *ReferenceType
+	CustomerMemo *MemoRef         `json:",omitempty"`
+	BillAddr     *PhysicalAddress `json:",omitempty"`
+	ShipAddr     *PhysicalAddress `json:",omitempty"`
+	ClassRef     *ReferenceType   `json:",omitempty"`
+	SalesTermRef *ReferenceType   `json:",omitempty"`
+	DueDate      *Date            `json:",omitempty"`
 	//GlobalTaxCalculation
-	ShipMethodRef ReferenceType `json:",omitempty"`
-	ShipDate      Date          `json:",omitempty"`
-	TrackingNum   string        `json:",omitempty"`
-	TotalAmt      json.Number   `json:",omitempty"`
+	ShipMethodRef *ReferenceType `json:",omitempty"`
+	ShipDate      *Date          `json:",omitempty"`
+	TrackingNum   string         `json:",omitempty"`
+	TotalAmt      json.Number    `json:",omitempty"`
 	//CurrencyRef
-	ExchangeRate          json.Number  `json:",omitempty"`
-	HomeAmtTotal          json.Number  `json:",omitempty"`
-	HomeBalance           json.Number  `json:",omitempty"`
-	ApplyTaxAfterDiscount bool         `json:",omitempty"`
-	PrintStatus           string       `json:",omitempty"`
-	EmailStatus           string       `json:",omitempty"`
-	BillEmail             EmailAddress `json:",omitempty"`
-	BillEmailCC           EmailAddress `json:"BillEmailCc,omitempty"`
-	BillEmailBCC          EmailAddress `json:"BillEmailBcc,omitempty"`
+	ExchangeRate          json.Number   `json:",omitempty"`
+	HomeAmtTotal          json.Number   `json:",omitempty"`
+	HomeBalance           json.Number   `json:",omitempty"`
+	ApplyTaxAfterDiscount bool          `json:",omitempty"`
+	PrintStatus           string        `json:",omitempty"`
+	EmailStatus           string        `json:",omitempty"`
+	BillEmail             *EmailAddress `json:",omitempty"`
+	BillEmailCC           *EmailAddress `json:"BillEmailCc,omitempty"`
+	BillEmailBCC          *EmailAddress `json:"BillEmailBcc,omitempty"`
 	//DeliveryInfo
-	Balance                      json.Number   `json:",omitempty"`
-	TxnSource                    string        `json:",omitempty"`
-	AllowOnlineCreditCardPayment bool          `json:",omitempty"`
-	AllowOnlineACHPayment        bool          `json:",omitempty"`
-	Deposit                      json.Number   `json:",omitempty"`
-	DepositToAccountRef          ReferenceType `json:",omitempty"`
+	Balance                      json.Number    `json:",omitempty"`
+	TxnSource                    string         `json:",omitempty"`
+	AllowOnlineCreditCardPayment bool           `json:",omitempty"`
+	AllowOnlineACHPayment        bool           `json:",omitempty"`
+	Deposit                      json.Number    `json:",omitempty"`
+	DepositToAccountRef          *ReferenceType `json:",omitempty"`
 }
 
 // TxnTaxDetail ...
@@ -97,7 +98,7 @@ type AccountBasedExpenseLineDetail struct {
 	//TaxCodeRef      ReferenceType `json:",omitempty"`
 	// MarkupInfo MarkupInfo `json:",omitempty"`
 	//BillableStatus BillableStatusEnum       `json:",omitempty"`
-	//CustomerRef    ReferenceType `json:",omitempty"`
+	CustomerRef *ReferenceType `json:",omitempty"`
 }
 
 // Line ...
@@ -107,11 +108,12 @@ type Line struct {
 	Description                   string `json:",omitempty"`
 	Amount                        json.Number
 	DetailType                    string
-	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail `json:",omitempty"`
-	JournalEntryLineDetail        JournalEntryLineDetail        `json:",omitempty"`
-	SalesItemLineDetail           SalesItemLineDetail           `json:",omitempty"`
-	DiscountLineDetail            DiscountLineDetail            `json:",omitempty"`
-	TaxLineDetail                 TaxLineDetail                 `json:",omitempty"`
+	AccountBasedExpenseLineDetail *AccountBasedExpenseLineDetail `json:",omitempty"`
+	JournalEntryLineDetail        *JournalEntryLineDetail        `json:",omitempty"`
+	SalesItemLineDetail           *SalesItemLineDetail           `json:",omitempty"`
+	SubtotalLineDetail            *SubtotalLineDetail            `json:",omitempty"`
+	DiscountLineDetail            *DiscountLineDetail            `json:",omitempty"`
+	TaxLineDetail                 *TaxLineDetail                 `json:",omitempty"`
 }
 
 // TaxLineDetail ...
@@ -124,19 +126,27 @@ type TaxLineDetail struct {
 	TaxRateRef ReferenceType
 }
 
+type SubtotalLineDetail struct {
+	ItemRef *ReferenceType `json:",omitempty"`
+}
+
 // SalesItemLineDetail ...
 type SalesItemLineDetail struct {
-	ItemRef   ReferenceType `json:",omitempty"`
-	ClassRef  ReferenceType `json:",omitempty"`
-	UnitPrice json.Number   `json:",omitempty"`
+	ItemRef   *ReferenceType `json:",omitempty"`
+	ClassRef  *ReferenceType `json:",omitempty"`
+	UnitPrice json.Number    `json:",omitempty"`
 	//MarkupInfo
-	Qty             float32       `json:",omitempty"`
-	ItemAccountRef  ReferenceType `json:",omitempty"`
-	TaxCodeRef      ReferenceType `json:",omitempty"`
-	ServiceDate     Date          `json:",omitempty"`
-	TaxInclusiveAmt json.Number   `json:",omitempty"`
-	DiscountRate    json.Number   `json:",omitempty"`
-	DiscountAmt     json.Number   `json:",omitempty"`
+	Qty             float32        `json:",omitempty"`
+	ItemAccountRef  *ReferenceType `json:",omitempty"`
+	TaxCodeRef      *ReferenceType `json:",omitempty"`
+	ServiceDate     *Date          `json:",omitempty"`
+	TaxInclusiveAmt json.Number    `json:",omitempty"`
+	DiscountRate    json.Number    `json:",omitempty"`
+	DiscountAmt     json.Number    `json:",omitempty"`
+}
+
+func (SalesItemLineDetail) Name() string {
+	return "SalesItemLineDetail"
 }
 
 // DiscountLineDetail ...
@@ -232,11 +242,15 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 		return nil, parseFailure(res)
 	}
 
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
 	var r struct {
 		Invoice Invoice
 		Time    Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
+	err = json.Unmarshal(body, &r)
 	return &r.Invoice, err
 }
 

@@ -6,6 +6,7 @@ package quickbooks
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -97,7 +98,7 @@ type AccountBasedExpenseLineDetail struct {
 	//TaxCodeRef      ReferenceType `json:",omitempty"`
 	// MarkupInfo MarkupInfo `json:",omitempty"`
 	//BillableStatus BillableStatusEnum       `json:",omitempty"`
-	//CustomerRef    ReferenceType `json:",omitempty"`
+	CustomerRef ReferenceType `json:",omitempty"`
 }
 
 // Line ...
@@ -138,10 +139,14 @@ type SalesItemLineDetail struct {
 	Qty             float32        `json:",omitempty"`
 	ItemAccountRef  *ReferenceType `json:",omitempty"`
 	TaxCodeRef      *ReferenceType `json:",omitempty"`
-	ServiceDate     Date           `json:",omitempty"`
+	ServiceDate     *Date          `json:",omitempty"`
 	TaxInclusiveAmt json.Number    `json:",omitempty"`
 	DiscountRate    json.Number    `json:",omitempty"`
 	DiscountAmt     json.Number    `json:",omitempty"`
+}
+
+func (SalesItemLineDetail) Name() string {
+	return "SalesItemLineDetail"
 }
 
 // DiscountLineDetail ...
@@ -237,83 +242,25 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 		return nil, parseFailure(res)
 	}
 
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
 	var r struct {
 		Invoice Invoice
 		Time    Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
+	err = json.Unmarshal(body, &r)
 	return &r.Invoice, err
 }
 
 type CustomerRef struct {
-	Name  string `json:"name"`
-	Value string `json:"id"`
-}
-
-type CreateInvoiceSalesItemLineDetail struct {
-	LineNum int         `json:"LineNum"`
-	Amount  json.Number `json:"Amount"`
-
-	Description string `json:"Description"`
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 type DescriptionLineDetail struct {
 	ServiceDate string `json:"ServiceDate"`
-}
-
-type CreateInvoiceLine struct {
-	DetailType          string                           `json:"DetailType"`
-	SalesItemLineDetail CreateInvoiceSalesItemLineDetail `json:"SalesItemLineDetail,omitempty"`
-	Description         string                           `json:"Description,omitempty"`
-	LineNum             int                              `json:"LineNum"`
-	Amount              json.Number                      `json:"Amount"`
-}
-
-type CreateInvoiceRequest struct {
-	CustomerRef CustomerRef         `json:"CustomerRef"`
-	Line        []CreateInvoiceLine `json:"Line"`
-}
-
-// CreateInvoice creates the given Invoice on the QuickBooks server, returning
-// the resulting Invoice object.
-func (c *Client) CreateInvoice69(inv *CreateInvoiceRequest) (*Invoice, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/invoice"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var j []byte
-	j, err = json.Marshal(inv)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-
-	var r struct {
-		Invoice Invoice
-		Time    Date
-	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Invoice, err
 }
 
 // DeleteInvoice deletes the given Invoice by ID and sync token from the

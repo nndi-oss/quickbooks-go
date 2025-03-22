@@ -98,7 +98,7 @@ type AccountBasedExpenseLineDetail struct {
 	//TaxCodeRef      ReferenceType `json:",omitempty"`
 	// MarkupInfo MarkupInfo `json:",omitempty"`
 	//BillableStatus BillableStatusEnum       `json:",omitempty"`
-	CustomerRef ReferenceType `json:",omitempty"`
+	CustomerRef *ReferenceType `json:",omitempty"`
 }
 
 // Line ...
@@ -252,15 +252,6 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 	}
 	err = json.Unmarshal(body, &r)
 	return &r.Invoice, err
-}
-
-type CustomerRef struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
-}
-
-type DescriptionLineDetail struct {
-	ServiceDate string `json:"ServiceDate"`
 }
 
 // DeleteInvoice deletes the given Invoice by ID and sync token from the
